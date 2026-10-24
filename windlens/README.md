@@ -13,6 +13,62 @@ The application is scoped to purchase decisions made from 1–31 January 2026, c
 - `backend/tests/` — backend tests
 - `Dockerfile` and `docker-compose.yml` — build and run the frontend and backend together in one container
 
+## Client use case
+
+The intended user is a UK utility's day-ahead electricity buying team. Before a delivery day, the user selects the delivery date and the time by which the buying decision must be made. WindLens shows the latest Elexon national wind forecast available by that cutoff, when it was published, and how it compares with actual wind generation for historical validation.
+
+The app helps the team understand the wind forecast and its historical error when considering a purchase. It does not calculate consumer demand, total supply, a system shortfall, or a recommended purchase amount: those require demand and other supply data, which are explicitly outside this product's data scope.
+
+### User workflow
+
+1. Open WindLens and choose a delivery day in the supported date range. These dates correspond to purchase decisions made during January 2026.
+2. Set the decision cutoff in UK local time. The default is 09:20 on the day before delivery; confirm this assumption against the team's actual trading deadline.
+3. Review the daily wind forecast and the actual-generation comparison. The publication time shown is the selected forecast version available by the cutoff.
+4. Review daily forecast error measures (MAE, RMSE, and bias), plus the historical accuracy charts. Error is forecast minus actual; positive bias means wind was over-forecast.
+5. Select a chart point or detail-table row to inspect the forecast versions for that delivery hour, including which version was selected and which were published too late.
+6. Use these forecast and historical-error measures as decision support alongside the team's other systems and information. Do not interpret WindLens as a total procurement recommendation.
+
+## End-to-end data and application pipeline
+
+```text
+Elexon FUELHH stream                 Elexon WINDFOR stream
+  actual generation                     forecast versions
+  filter fuelType=WIND                  startTime, publishTime, generation
+           \                                  /
+            \                                /
+             scripts/ingest.py (date chunks, retries)
+                              |
+                    raw data/actuals.csv
+                    raw data/forecasts.csv
+                              |
+                    scripts/process_data.py
+       validate -> remove duplicates/conflicts -> flag/remove heuristic outliers
+                              |
+     data/processed/actuals.csv, forecasts.csv, quality report, flagged rows
+                              |
+        FastAPI loads and parses data as UTC-aware timestamps
+                              |
+     select latest forecast published by previous-day UK cutoff
+                              |
+   aggregate complete pairs of half-hour actuals into UTC hourly actuals
+                              |
+            match forecasts and actuals by delivery hour
+                              |
+             calculate errors and accuracy metrics
+                              |
+          React dashboard requests and presents API results
+```
+
+### Pipeline stages
+
+1. **Ingestion:** `scripts/ingest.py` calls the Elexon FUELHH and WINDFOR stream endpoints. It requests actuals in seven-day chunks and forecasts in two-day chunks, retries failed requests, filters FUELHH to wind, and writes the raw CSV files under `data/`. It then runs the processing script.
+2. **Data quality processing:** `scripts/process_data.py` checks required fields, timestamps, and numeric/non-negative generation values; keeps WIND actuals; removes exact duplicate records and all records in conflicting duplicate-key groups; and applies a rolling-MAD outlier heuristic. It preserves the raw CSVs, writes cleaned CSVs to `data/processed/`, saves flagged rows separately, and writes `processing_report.json`. Outlier detection is heuristic and can flag legitimate rapid changes.
+3. **Backend loading and decision-time selection:** FastAPI loads the processed CSVs and normalizes timestamps to UTC. For each delivery hour, it identifies the delivery date in UK time, calculates the previous-day cutoff (including UK daylight-saving time), filters out forecasts published after that cutoff, and chooses the latest eligible `publishTime`.
+4. **Actual/forecast alignment:** WINDFOR values are hourly; FUELHH values are half-hourly. The backend averages the two actual readings in each UTC hour and excludes an hour if either reading is missing. It matches the resulting hourly actual with the selected forecast by timestamp; it does not fill missing values with zero.
+5. **Metrics and API:** The backend calculates signed error (`forecast - actual`), absolute error, MAE, RMSE, bias, percentile miss, and MAPE (excluding actuals at or below 100 MW). The API provides metadata, delivery-day, forecast-history, and accuracy endpoints. Day and accuracy requests are limited to delivery dates associated with January 2026 decisions.
+6. **Frontend presentation:** React calls the API, displays the chosen forecast and comparison charts/KPIs, and provides forecast-version history and interval detail. The frontend is served by FastAPI in the Docker image; in local development, Vite proxies `/api` to the backend.
+7. **Runtime packaging:** Docker builds the React app, installs the Python backend dependencies, processes the included raw CSVs during image build, and runs FastAPI to serve both the API and static frontend. For Vercel, the README's deployment option hosts the frontend there and requires the API to be separately reachable and configured with the Vercel origin in CORS.
+
 ## Run with Docker
 
 ### Prerequisites
