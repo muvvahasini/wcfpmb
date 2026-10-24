@@ -10,7 +10,6 @@ htmlcov/
 
 # Node dependencies and build output
 frontend/node_modules/
-frontend/dist/
 frontend/.vite/
 
 # Local environment variables (keep example templates)
