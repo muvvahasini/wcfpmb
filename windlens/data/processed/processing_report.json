@@ -1,0 +1,34 @@
+{
+  "outlier_rule": "For the actual series and each forecast publication, flag a value when its deviation from the median of up to 3 neighboring intervals on each side exceeds max(6 * 1.4826 * MAD, 2000 MW).",
+  "raw_files_preserved": true,
+  "datasets": {
+    "actuals": {
+      "input_rows": 1632,
+      "blank_rows": 0,
+      "malformed_rows": 0,
+      "rows_with_empty_required_fields": 0,
+      "non_wind_rows": 0,
+      "invalid_timestamp_rows": 0,
+      "invalid_generation_rows": 0,
+      "negative_generation_rows": 0,
+      "exact_duplicate_rows_removed": 0,
+      "conflicting_duplicate_rows_removed": 0,
+      "noisy_rows_removed": 0,
+      "output_rows": 1632
+    },
+    "forecasts": {
+      "input_rows": 19272,
+      "blank_rows": 0,
+      "malformed_rows": 0,
+      "rows_with_empty_required_fields": 0,
+      "non_wind_rows": 0,
+      "invalid_timestamp_rows": 0,
+      "invalid_generation_rows": 0,
+      "negative_generation_rows": 0,
+      "exact_duplicate_rows_removed": 0,
+      "conflicting_duplicate_rows_removed": 0,
+      "noisy_rows_removed": 0,
+      "output_rows": 19272
+    }
+  }
+}

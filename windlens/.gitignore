@@ -1,0 +1,32 @@
+# Python environments and bytecode
+.venv/
+venv/
+env/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node dependencies and build output
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Local environment variables (keep example templates)
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Deployment and editor-local files
+.vercel/
+.vscode/
+.idea/
+
+# Operating system and logs
+.DS_Store
+Thumbs.db
+*.log
