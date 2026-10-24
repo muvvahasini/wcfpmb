@@ -6,12 +6,38 @@ The application is scoped to purchase decisions made from 1–31 January 2026, c
 
 ## Project structure
 
-- `frontend/` — React, Vite, and Recharts dashboard
-- `backend/app/` — Python FastAPI API and forecast/accuracy logic
-- `scripts/ingest.py` — downloads Elexon FUELHH and WINDFOR CSVs
-- `scripts/process_data.py` — validates and cleans the CSVs, preserving raw files and writing cleaned files and a quality report under `data/processed/`
-- `backend/tests/` — backend tests
-- `Dockerfile` and `docker-compose.yml` — build and run the frontend and backend together in one container
+```text
+repository/
+├── README.md
+└── windlens/                         # Application root
+    ├── frontend/                     # React + Vite UI (Vercel frontend root)
+    │   ├── src/
+    │   │   ├── App.jsx               # Dashboard, charts, and user workflow
+    │   │   ├── api.js                # Backend API client
+    │   │   ├── main.jsx              # React entry point
+    │   │   └── styles.css
+    │   ├── package.json
+    │   └── vite.config.js            # Local API proxy
+    ├── backend/                      # FastAPI service (Vercel backend root)
+    │   ├── app/
+    │   │   ├── main.py               # API endpoints and data loading
+    │   │   ├── services/             # Forecast selection and metrics
+    │   │   └── utils/                # UTC and UK timezone helpers
+    │   ├── data/processed/           # Processed CSVs bundled with backend
+    │   ├── tests/                    # Backend tests
+    │   └── requirements.txt
+    ├── scripts/
+    │   ├── ingest.py                 # Download Elexon FUELHH and WINDFOR
+    │   └── process_data.py           # Validate, clean, report, sync backend data
+    ├── data/                         # Raw and local processed CSVs
+    ├── Dockerfile                    # Combined frontend/backend image
+    ├── docker-compose.yml            # Local Docker configuration
+    ├── heroku.yml                    # Heroku container configuration
+    ├── requirements.txt              # Root-level Python dependencies
+    └── .gitignore
+```
+
+The ingestion and processing scripts are data-maintenance tools, not runtime services. Run them from `windlens/` (the application root) when refreshing Elexon data. They write raw and local processed data under `windlens/data/` and synchronize deployment-ready files to `windlens/backend/data/processed/`. The Vercel frontend project uses `windlens/frontend/`; the backend project uses `windlens/backend/`.
 
 ## Client use case
 

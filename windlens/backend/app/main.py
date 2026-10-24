@@ -14,8 +14,14 @@ from app.services.metrics_service import compute_metrics, match, prepare_actuals
 from app.utils.timestamps import UK_TZ, to_utc, uk_delivery_date
 from datetime import date, timedelta
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = Path(os.getenv("DATA_DIR", ROOT / "data"))
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+ROOT = BACKEND_ROOT.parent
+DEFAULT_DATA_DIR = (
+    BACKEND_ROOT / "data"
+    if (BACKEND_ROOT / "data" / "processed").exists()
+    else ROOT / "data"
+)
+DATA = Path(os.getenv("DATA_DIR", DEFAULT_DATA_DIR))
 CUTOFF_RE = r"^([01]\d|2[0-3]):[0-5]\d$"
 JANUARY_DECISION_START = date(2026, 1, 1)
 JANUARY_DECISION_END = date(2026, 1, 31)

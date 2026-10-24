@@ -2,6 +2,7 @@
 import csv
 import json
 import math
+import shutil
 import statistics
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -190,6 +191,12 @@ def process_files(raw_dir=RAW_DIR, output_dir=PROCESSED_DIR):
         report["datasets"][kind] = process_file(kind, raw_dir, output_dir)
     report_path = output_dir / "processing_report.json"
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    if raw_dir.resolve() == DATA.resolve() and output_dir.resolve() == PROCESSED_DIR.resolve():
+        deploy_dir = ROOT / "backend" / "data" / "processed"
+        deploy_dir.mkdir(parents=True, exist_ok=True)
+        for path in output_dir.iterdir():
+            if path.is_file():
+                shutil.copy2(path, deploy_dir / path.name)
     print(f"Processed data written to {output_dir}; report: {report_path}")
     for kind, counts in report["datasets"].items():
         print(f"{kind}: {counts['input_rows']} input, {counts['output_rows']} kept, "
